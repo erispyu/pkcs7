@@ -22,11 +22,11 @@ type PKCS7 struct {
 	Content      []byte
 	Certificates []*x509.Certificate
 	CRLs         []pkix.CertificateList
-	Signers      []signerInfo
+	Signers      []SignerInfo
 	raw          interface{}
 }
 
-type contentInfo struct {
+type ContentInfo struct {
 	ContentType asn1.ObjectIdentifier
 	Content     asn1.RawValue `asn1:"explicit,optional,tag:0"`
 }
@@ -115,7 +115,7 @@ func getDigestOIDForSignatureAlgorithm(digestAlg x509.SignatureAlgorithm) (asn1.
 }
 
 // getOIDForEncryptionAlgorithm takes the private key type of the signer and
-// the OID of a digest algorithm to return the appropriate signerInfo.DigestEncryptionAlgorithm
+// the OID of a digest algorithm to return the appropriate SignerInfo.DigestEncryptionAlgorithm
 func getOIDForEncryptionAlgorithm(pkey crypto.PrivateKey, OIDDigestAlg asn1.ObjectIdentifier) (asn1.ObjectIdentifier, error) {
 	switch pkey.(type) {
 	case *rsa.PrivateKey:
@@ -156,7 +156,7 @@ func Parse(data []byte) (p7 *PKCS7, err error) {
 	if len(data) == 0 {
 		return nil, errors.New("pkcs7: input data is empty")
 	}
-	var info contentInfo
+	var info ContentInfo
 	der, err := ber2der(data)
 	if err != nil {
 		return nil, err
@@ -215,7 +215,7 @@ func (raw rawCertificates) Parse() ([]*x509.Certificate, error) {
 	return x509.ParseCertificates(val.Bytes)
 }
 
-func isCertMatchForIssuerAndSerial(cert *x509.Certificate, ias issuerAndSerial) bool {
+func isCertMatchForIssuerAndSerial(cert *x509.Certificate, ias IssuerAndSerial) bool {
 	return cert.SerialNumber.Cmp(ias.SerialNumber) == 0 && bytes.Equal(cert.RawIssuer, ias.IssuerName.FullBytes)
 }
 

@@ -27,7 +27,7 @@ type encryptedData struct {
 
 type recipientInfo struct {
 	Version                int
-	IssuerAndSerialNumber  issuerAndSerial
+	IssuerAndSerialNumber  IssuerAndSerial
 	KeyEncryptionAlgorithm pkix.AlgorithmIdentifier
 	EncryptedKey           []byte
 }
@@ -256,7 +256,7 @@ func encryptAESCBC(content []byte, key []byte) ([]byte, *encryptedContentInfo, e
 // value is EncryptionAlgorithmDESCBC. To use a different algorithm, change the
 // value before calling Encrypt(). For example:
 //
-//     ContentEncryptionAlgorithm = EncryptionAlgorithmAES128GCM
+//	ContentEncryptionAlgorithm = EncryptionAlgorithmAES128GCM
 //
 // TODO(fullsailor): Add support for encrypting content with other algorithms
 func Encrypt(content []byte, recipients []*x509.Certificate) ([]byte, error) {
@@ -319,7 +319,7 @@ func Encrypt(content []byte, recipients []*x509.Certificate) ([]byte, error) {
 	}
 
 	// Prepare outer payload structure
-	wrapper := contentInfo{
+	wrapper := ContentInfo{
 		ContentType: OIDEnvelopedData,
 		Content:     asn1.RawValue{Class: 2, Tag: 0, IsCompound: true, Bytes: innerContent},
 	}
@@ -366,7 +366,7 @@ func EncryptUsingPSK(content []byte, key []byte) ([]byte, error) {
 	}
 
 	// Prepare outer payload structure
-	wrapper := contentInfo{
+	wrapper := ContentInfo{
 		ContentType: OIDEncryptedData,
 		Content:     asn1.RawValue{Class: 2, Tag: 0, IsCompound: true, Bytes: innerContent},
 	}

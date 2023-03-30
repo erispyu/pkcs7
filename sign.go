@@ -31,7 +31,7 @@ func NewSignedData(data []byte) (*SignedData, error) {
 	if err != nil {
 		return nil, err
 	}
-	ci := contentInfo{
+	ci := ContentInfo{
 		ContentType: OIDData,
 		Content:     asn1.RawValue{Class: 2, Tag: 0, Bytes: content, IsCompound: true},
 	}
@@ -51,15 +51,15 @@ type SignerInfoConfig struct {
 type signedData struct {
 	Version                    int                        `asn1:"default:1"`
 	DigestAlgorithmIdentifiers []pkix.AlgorithmIdentifier `asn1:"set"`
-	ContentInfo                contentInfo
+	ContentInfo                ContentInfo
 	Certificates               rawCertificates        `asn1:"optional,tag:0"`
 	CRLs                       []pkix.CertificateList `asn1:"optional,tag:1"`
-	SignerInfos                []signerInfo           `asn1:"set"`
+	SignerInfos                []SignerInfo           `asn1:"set"`
 }
 
-type signerInfo struct {
+type SignerInfo struct {
 	Version                   int `asn1:"default:1"`
-	IssuerAndSerialNumber     issuerAndSerial
+	IssuerAndSerialNumber     IssuerAndSerial
 	DigestAlgorithm           pkix.AlgorithmIdentifier
 	AuthenticatedAttributes   []attribute `asn1:"optional,omitempty,tag:0"`
 	DigestEncryptionAlgorithm pkix.AlgorithmIdentifier
@@ -90,7 +90,7 @@ type rawCertificates struct {
 	Raw asn1.RawContent
 }
 
-type issuerAndSerial struct {
+type IssuerAndSerial struct {
 	IssuerName   asn1.RawValue
 	SerialNumber *big.Int
 }
@@ -128,7 +128,7 @@ func (sd *SignedData) AddSignerChain(ee *x509.Certificate, pkey crypto.PrivateKe
 	// the issuer of the end-entity signer is stored in the issuerAndSerialNumber
 	// section of the SignedData.SignerInfo, alongside the serial number of
 	// the end-entity.
-	var ias issuerAndSerial
+	var ias IssuerAndSerial
 	ias.SerialNumber = ee.SerialNumber
 	if len(parents) == 0 {
 		// no parent, the issuer is the end-entity cert itself
@@ -179,7 +179,7 @@ func (sd *SignedData) AddSignerChain(ee *x509.Certificate, pkey crypto.PrivateKe
 	if err != nil {
 		return err
 	}
-	signer := signerInfo{
+	signer := SignerInfo{
 		AuthenticatedAttributes:   finalAttrs,
 		UnauthenticatedAttributes: finalUnsignedAttrs,
 		DigestAlgorithm:           pkix.AlgorithmIdentifier{Algorithm: sd.digestOid},
@@ -235,7 +235,7 @@ func (sd *SignedData) SignWithoutAttr(ee *x509.Certificate, pkey crypto.PrivateK
 			return err
 		}
 	}
-	var ias issuerAndSerial
+	var ias IssuerAndSerial
 	ias.SerialNumber = ee.SerialNumber
 	// no parent, the issue is the end-entity cert itself
 	ias.IssuerName = asn1.RawValue{FullBytes: ee.RawIssuer}
@@ -247,7 +247,7 @@ func (sd *SignedData) SignWithoutAttr(ee *x509.Certificate, pkey crypto.PrivateK
 	if err != nil {
 		return err
 	}
-	signer := signerInfo{
+	signer := SignerInfo{
 		DigestAlgorithm:           pkix.AlgorithmIdentifier{Algorithm: sd.digestOid},
 		DigestEncryptionAlgorithm: pkix.AlgorithmIdentifier{Algorithm: sd.encryptionOid},
 		IssuerAndSerialNumber:     ias,
@@ -260,7 +260,7 @@ func (sd *SignedData) SignWithoutAttr(ee *x509.Certificate, pkey crypto.PrivateK
 	return nil
 }
 
-func (si *signerInfo) SetUnauthenticatedAttributes(extraUnsignedAttrs []Attribute) error {
+func (si *SignerInfo) SetUnauthenticatedAttributes(extraUnsignedAttrs []Attribute) error {
 	unsignedAttrs := &attributes{}
 	for _, attr := range extraUnsignedAttrs {
 		unsignedAttrs.Add(attr.Type, attr.Value)
@@ -283,7 +283,7 @@ func (sd *SignedData) AddCertificate(cert *x509.Certificate) {
 // Detach removes content from the signed data struct to make it a detached signature.
 // This must be called right before Finish()
 func (sd *SignedData) Detach() {
-	sd.sd.ContentInfo = contentInfo{ContentType: OIDData}
+	sd.sd.ContentInfo = ContentInfo{ContentType: OIDData}
 }
 
 // GetSignedData returns the private Signed Data
@@ -298,7 +298,7 @@ func (sd *SignedData) Finish() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	outer := contentInfo{
+	outer := ContentInfo{
 		ContentType: OIDSignedData,
 		Content:     asn1.RawValue{Class: 2, Tag: 0, Bytes: inner, IsCompound: true},
 	}
@@ -339,8 +339,8 @@ func verifyPartialChain(cert *x509.Certificate, parents []*x509.Certificate) err
 	return verifyPartialChain(parents[0], parents[1:])
 }
 
-func cert2issuerAndSerial(cert *x509.Certificate) (issuerAndSerial, error) {
-	var ias issuerAndSerial
+func cert2issuerAndSerial(cert *x509.Certificate) (IssuerAndSerial, error) {
+	var ias IssuerAndSerial
 	// The issuer RDNSequence has to match exactly the sequence in the certificate
 	// We cannot use cert.Issuer.ToRDNSequence() here since it mangles the sequence
 	ias.IssuerName = asn1.RawValue{FullBytes: cert.RawIssuer}
@@ -410,7 +410,7 @@ func DegenerateCertificate(cert []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	emptyContent := contentInfo{ContentType: OIDData}
+	emptyContent := ContentInfo{ContentType: OIDData}
 	sd := signedData{
 		Version:      1,
 		ContentInfo:  emptyContent,
@@ -421,7 +421,7 @@ func DegenerateCertificate(cert []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	signedContent := contentInfo{
+	signedContent := ContentInfo{
 		ContentType: OIDSignedData,
 		Content:     asn1.RawValue{Class: 2, Tag: 0, Bytes: content, IsCompound: true},
 	}

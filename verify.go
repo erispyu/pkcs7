@@ -54,7 +54,7 @@ func (p7 *PKCS7) VerifyWithChainAtTime(truststore *x509.CertPool, currentTime ti
 	return nil
 }
 
-func verifySignatureAtTime(p7 *PKCS7, signer signerInfo, truststore *x509.CertPool, currentTime time.Time) (err error) {
+func verifySignatureAtTime(p7 *PKCS7, signer SignerInfo, truststore *x509.CertPool, currentTime time.Time) (err error) {
 	signedData := p7.Content
 	ee := getCertFromCertsByIssuerAndSerial(p7.Certificates, signer.IssuerAndSerialNumber)
 	if ee == nil {
@@ -111,7 +111,7 @@ func verifySignatureAtTime(p7 *PKCS7, signer signerInfo, truststore *x509.CertPo
 	return ee.CheckSignature(sigalg, signedData, signer.EncryptedDigest)
 }
 
-func verifySignature(p7 *PKCS7, signer signerInfo, truststore *x509.CertPool) (err error) {
+func verifySignature(p7 *PKCS7, signer SignerInfo, truststore *x509.CertPool) (err error) {
 	signedData := p7.Content
 	ee := getCertFromCertsByIssuerAndSerial(p7.Certificates, signer.IssuerAndSerialNumber)
 	if ee == nil {
@@ -323,7 +323,7 @@ func getSignatureAlgorithm(digestEncryption, digest pkix.AlgorithmIdentifier) (x
 	}
 }
 
-func getCertFromCertsByIssuerAndSerial(certs []*x509.Certificate, ias issuerAndSerial) *x509.Certificate {
+func getCertFromCertsByIssuerAndSerial(certs []*x509.Certificate, ias IssuerAndSerial) *x509.Certificate {
 	for _, cert := range certs {
 		if isCertMatchForIssuerAndSerial(cert, ias) {
 			return cert
